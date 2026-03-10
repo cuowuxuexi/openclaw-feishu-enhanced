@@ -1,6 +1,5 @@
 node_modules/
+package-lock.json
+.vscode/
+openclaw-thailand.json
 dist/
-*.rej
-.env
-.env.*
-*.log

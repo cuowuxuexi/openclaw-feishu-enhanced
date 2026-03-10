@@ -1,10 +1,11 @@
 {
-  "id": "feishu",
-  "channels": ["feishu"],
-  "skills": ["./skills"],
-  "configSchema": {
-    "type": "object",
-    "additionalProperties": false,
-    "properties": {}
-  }
+    "id": "feishu-enhanced",
+    "skills": [
+        "./skills"
+    ],
+    "configSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+    }
 }
