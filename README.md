@@ -1,6 +1,8 @@
 # OpenClaw Feishu Enhanced 🚀
 
-**纯增量工具插件**——在官方 `@openclaw/feishu` 插件基础上，添加官方没有的功能。
+**纯增量工具插件** — 在官方 `@openclaw/feishu` 插件基础上，添加官方没有的功能。
+
+> 与官方插件**完全独立**，不会冲突，也不会在 OpenClaw 升级时被覆盖。
 
 ## ✨ 提供的工具
 
@@ -11,32 +13,69 @@
 
 > 其他 Feishu 工具（`feishu_doc`、`feishu_wiki`、`feishu_drive`、`feishu_bitable`、`feishu_perm`）由官方插件提供。
 
+## ❓ 为什么需要 Raw Block 写入
+
+官方插件的 `feishu_doc` write/append 走 **Markdown → 飞书 `document.convert` API → block JSON** 管道。当 Markdown 结构复杂时（嵌套列表、富文本链接、混合格式），`document.convert` 经常返回 **HTTP 400**。
+
+`feishu_doc_raw` 直接提交 block JSON 给 `documentBlockChildren.create` API，完全绕开转换环节，成功率大幅提高。
+
+### `feishu_doc_raw` Actions
+
+| Action | 说明 |
+|--------|------|
+| `write_blocks` | 清空文档后写入 block JSON 数组 |
+| `append_blocks` | 向文档末尾追加 blocks |
+| `insert_blocks` | 在指定 parent block 下插入子块 |
+| `batch_update` | 批量更新多个 block 的文本内容 |
+
+### `feishu_wiki_extra` Actions
+
+| Action | 说明 |
+|--------|------|
+| `delete` | 删除 Wiki 节点（自动解析 obj_token → 通过 Drive API 删除，进回收站 30 天可恢复） |
+| `create_space` | 创建新的知识空间 |
+
 ## 📦 安装
 
 ```bash
 cd ~/.openclaw/node_modules/openclaw/extensions/
-git clone <repo-url> feishu-enhanced
+git clone https://github.com/cuowuxuexi/openclaw-feishu-enhanced.git feishu-enhanced
 cd feishu-enhanced && npm install
-npx openclaw restart
 ```
 
-> **重要**：本插件 ID 为 `feishu-enhanced`，与官方 `feishu` 插件**完全独立**，不会冲突，也不会在 OpenClaw 升级时被覆盖。
+然后在 `openclaw.json` 中启用插件：
+
+```json
+{
+  "plugins": {
+    "allow": ["feishu", "feishu-enhanced"],
+    "entries": {
+      "feishu": { "enabled": true },
+      "feishu-enhanced": { "enabled": true }
+    }
+  }
+}
+```
+
+重启 OpenClaw 即可生效。
 
 ## ⚙️ 配置
 
 本插件读取与官方插件相同的 `channels.feishu` 配置（appId、appSecret 等），无需额外配置。
 
-工具开关通过 `channels.feishu.tools.docRaw` 控制：
+Wiki delete 和 create_space 操作需要用户级别的 token：
 
-```yaml
-channels:
-  feishu:
-    appId: "cli_xxx"
-    appSecret: "xxx"
-    userAccessToken: "u-xxx"      # wiki delete 和 create_space 需要
-    userRefreshToken: "ur-xxx"    # 自动续期 token
-    tools:
-      docRaw: true                # Raw Block 直写（默认开启）
+```json
+{
+  "channels": {
+    "feishu": {
+      "appId": "cli_xxx",
+      "appSecret": "xxx",
+      "userAccessToken": "u-xxx",
+      "userRefreshToken": "ur-xxx"
+    }
+  }
+}
 ```
 
 ## 📁 文件结构
@@ -60,15 +99,18 @@ feishu-enhanced/
 │   ├── tools-config.ts           # 工具开关
 │   └── runtime.ts                # 运行时引用
 └── skills/
-    └── feishu-doc/SKILL.md       # docRaw 工具技能文档
+    └── feishu-doc/
+        ├── SKILL.md              # docRaw 工具技能文档
+        └── references/
+            └── block-types.md    # 飞书 Block 类型速查表
 ```
 
 ## 🔍 与官方插件的关系
 
-- **不冲突**：ID 不同，工具名不同，频道不注册
-- **共享配置**：读取同一个 `channels.feishu` 配置段
-- **独立升级**：OpenClaw 升级不影响本插件，本插件更新不影响官方功能
+- **不冲突** — 插件 ID 不同（`feishu-enhanced` vs `feishu`），工具名不同，频道不注册
+- **共享配置** — 读取同一个 `channels.feishu` 配置段
+- **独立升级** — OpenClaw 升级不影响本插件，本插件更新不影响官方功能
 
----
+## 📜 许可
 
-**最后更新**：2026-03-09
+MIT License
